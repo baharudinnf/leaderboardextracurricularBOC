@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPIC - Extracurricular Leaderboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus+Jakarta+Sans', sans-serif;
+            background-color: #0f172a; 
+            color: white;
+            overflow: hidden; 
+        }
+
+        .bg-epic-blue { background-color: #1e3a8a; }
+        .text-epic-blue { color: #1e3a8a; }
+        .bg-epic-yellow { background-color: #facc15; }
+        .text-epic-yellow { color: #facc15; }
+
+        #scroll-container {
+            height: calc(100vh - 200px);
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        #scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .leaderboard-card {
+            transition: all 0.5s ease;
+            border-left: 6px solid transparent;
+        }
+
+        .leaderboard-card.rank-1 { border-color: #facc15; background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%); }
+        .leaderboard-card.rank-2 { border-color: #cbd5e1; background: rgba(255, 255, 255, 0.05); }
+        .leaderboard-card.rank-3 { border-color: #92400e; background: rgba(255, 255, 255, 0.05); }
+        .leaderboard-card.normal { background: rgba(255, 255, 255, 0.03); }
+
+        .floating-badge {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .indicator-tag {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        /* Center Title Styling */
+        .main-title {
+            letter-spacing: -0.02em;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-epic-blue text-white shadow-2xl z-50 relative">
+        <div class="container mx-auto px-8 py-6 flex justify-between items-center relative">
+            <!-- Left: Logo/Icon -->
+            <div class="flex items-center space-x-3 w-1/4">
+                <div class="bg-epic-yellow p-2.5 rounded-xl shadow-lg">
+                    <i class="fas fa-trophy text-epic-blue text-xl"></i>
+                </div>
+                <div class="hidden sm:block">
+                    <h2 class="text-xl font-800 tracking-tighter italic leading-none">EPIC</h2>
+                    <p class="text-[8px] text-epic-yellow font-bold tracking-[0.2em] uppercase">System v2.5</p>
+                </div>
+            </div>
+            
+            <!-- Center: Main Title -->
+            <div class="absolute left-1/2 transform -translate-x-1/2 text-center w-full max-w-2xl pointer-events-none">
+                <h1 class="main-title text-2xl md:text-3xl font-800 uppercase italic leading-none text-white">
+                    EXTRACURRICULAR <span class="text-epic-yellow">LEADERBOARD</span>
+                </h1>
+                <p id="current-date" class="text-[10px] font-bold opacity-60 mt-1 uppercase tracking-[0.3em]"></p>
+            </div>
+            
+            <!-- Right: Admin Trigger -->
+            <div class="flex justify-end items-center gap-4 w-1/4">
+                <div class="text-right hidden lg:block">
+                    <p class="text-[9px] uppercase tracking-widest text-emerald-400 font-bold">Live Updates</p>
+                </div>
+                <button onclick="toggleAdmin()" class="bg-white/10 hover:bg-epic-yellow hover:text-epic-blue p-3 rounded-full transition-all duration-300">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content: Full Screen Leaderboard -->
+    <main class="flex-grow container mx-auto px-8 py-8 relative">
+        
+        <!-- Header Leaderboard -->
+        <div class="grid grid-cols-12 gap-4 mb-4 px-6 text-epic-yellow font-bold uppercase text-xs tracking-widest opacity-70">
+            <div class="col-span-1 text-center">Rank</div>
+            <div class="col-span-3">Unit Ekstrakurikuler</div>
+            <div class="col-span-6">Distribusi Poin Indikator</div>
+            <div class="col-span-2 text-right">Total Skor</div>
+        </div>
+
+        <!-- Scrollable Area -->
+        <div id="scroll-container" class="space-y-3 pb-24">
+            <!-- Data Rows -->
+        </div>
+
+        <!-- Gradient Overlay -->
+        <div class="fixed bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/80 to-transparent pointer-events-none z-40"></div>
+    </main>
+
+    <!-- Admin Panel Modal -->
+    <div id="admin-panel" class="fixed inset-0 bg-black/80 z-[100] hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white text-slate-800 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border-4 border-epic-yellow">
+            <div class="bg-epic-blue p-6 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-user-shield"></i> Update Data</h3>
+                <button onclick="toggleAdmin()" class="text-3xl hover:text-epic-yellow transition">&times;</button>
+            </div>
+            <div class="p-8">
+                <form id="update-form" class="space-y-6">
+                    <div>
+                        <label class="block text-xs font-bold mb-2 uppercase opacity-60">1. Pilih Unit Eskul</label>
+                        <select id="eskul-select" class="w-full border-2 border-slate-100 p-4 rounded-xl focus:border-epic-blue outline-none transition font-bold"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold mb-2 uppercase opacity-60">2. Indikator Capaian</label>
+                        <select id="indicator-select" class="w-full border-2 border-slate-100 p-4 rounded-xl focus:border-epic-blue outline-none transition font-bold"></select>
+                    </div>
+                    <button type="submit" class="w-full bg-epic-blue text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-900 shadow-lg transition-all active:scale-95">Simpan Poin</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dataEskul = [
+            { id: 1, name: 'OSIS', points: {} },
+            { id: 2, name: 'PKS', points: {} },
+            { id: 3, name: 'PMR', points: {} },
+            { id: 4, name: 'IPPI', points: {} },
+            { id: 5, name: 'Content Creator', points: {} },
+            { id: 6, name: 'Pengelolaan Sampah', points: {} },
+            { id: 7, name: 'Career Support', points: {} },
+            { id: 8, name: 'Tari', points: {} },
+            { id: 9, name: 'Robotic', points: {} },
+            { id: 10, name: 'CAD', points: {} },
+            { id: 11, name: 'Volly', points: {} },
+            { id: 12, name: 'English Debate', points: {} },
+            { id: 13, name: 'Pramuka', points: {} }
+        ];
+
+        const indicators = [
+            { label: "Kehadiran Anggota", key: "Kehadiran", value: 5 },
+            { label: "Tertib Administrasi", key: "Admin", value: 10 },
+            { label: "Studi Banding", key: "Studi", value: 20 },
+            { label: "Delegasi Sekolah", key: "Delegasi", value: 35 },
+            { label: "Publikasi Kegiatan", key: "Publikasi", value: 15 },
+            { label: "Training Internal", key: "Train-Int", value: 30 },
+            { label: "Exhibition/Baksos", key: "Pameran", value: 50 },
+            { label: "Partisipasi Lomba", key: "Lomba", value: 35 },
+            { label: "Juara 1 Nasional", key: "J1-Nas", value: 200 },
+            { label: "Juara 1 Provinsi", key: "J1-Prov", value: 120 },
+            { label: "Juara 1 Kab/Non", key: "J1-Kab", value: 70 }
+        ];
+
+        // Init data with some values
+        dataEskul.forEach(e => {
+            e.points["Kehadiran"] = Math.floor(Math.random() * 8) * 5;
+            e.points["Admin"] = Math.floor(Math.random() * 4) * 10;
+            if(e.id % 3 === 0) e.points["Publikasi"] = 15;
+        });
+
+        function calculateTotal(pointsObj) {
+            return Object.values(pointsObj).reduce((a, b) => a + b, 0);
+        }
+
+        function renderLeaderboard() {
+            const list = document.getElementById('scroll-container');
+            const sortedData = [...dataEskul].sort((a, b) => calculateTotal(b.points) - calculateTotal(a.points));
+            
+            list.innerHTML = sortedData.map((eskul, index) => {
+                const total = calculateTotal(eskul.points);
+                const rank = index + 1;
+                let rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'normal';
+                let badge = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+
+                const indicatorHtml = indicators
+                    .filter(ind => eskul.points[ind.key])
+                    .map(ind => `
+                        <div class="indicator-tag">
+                            <span class="opacity-60">${ind.key}</span>
+                            <span class="text-epic-yellow font-bold">${eskul.points[ind.key]}</span>
+                        </div>
+                    `).join('');
+
+                return `
+                    <div class="leaderboard-card ${rankClass} p-4 rounded-xl shadow-lg flex items-center grid grid-cols-12 gap-4">
+                        <div class="col-span-1 flex flex-col items-center justify-center border-r border-white/10">
+                            <span class="text-xl font-900 italic opacity-80">${rank}</span>
+                            <span class="floating-badge text-xl">${badge}</span>
+                        </div>
+                        <div class="col-span-3 pl-2">
+                            <h4 class="text-base md:text-lg font-bold text-white uppercase tracking-tight">${eskul.name}</h4>
+                        </div>
+                        <div class="col-span-6 flex flex-wrap gap-1.5 items-center">
+                            ${indicatorHtml || '<span class="text-[9px] opacity-20 italic">Data poin belum tersedia</span>'}
+                        </div>
+                        <div class="col-span-2 text-right">
+                            <p class="text-2xl font-900 text-epic-yellow tracking-tighter">${total}</p>
+                            <p class="text-[8px] font-bold uppercase opacity-40">Total Poin</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function autoScroll() {
+            const container = document.getElementById('scroll-container');
+            if (container && !document.getElementById('admin-panel').classList.contains('flex')) {
+                container.scrollTop += 0.8;
+                if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
+                    setTimeout(() => { container.scrollTo({ top: 0, behavior: 'smooth' }); }, 3000);
+                }
+            }
+        }
+
+        setInterval(autoScroll, 50);
+
+        function toggleAdmin() {
+            const panel = document.getElementById('admin-panel');
+            panel.classList.toggle('hidden');
+            panel.classList.toggle('flex');
+        }
+
+        function populateAdmin() {
+            document.getElementById('eskul-select').innerHTML = dataEskul.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            document.getElementById('indicator-select').innerHTML = indicators.map(i => `<option value="${i.key}|${i.value}">${i.label} (+${i.value})</option>`).join('');
+        }
+
+        document.getElementById('update-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const eskulId = parseInt(document.getElementById('eskul-select').value);
+            const [key, value] = document.getElementById('indicator-select').value.split('|');
+            
+            const index = dataEskul.findIndex(e => e.id === eskulId);
+            if(index !== -1) {
+                dataEskul[index].points[key] = (dataEskul[index].points[key] || 0) + parseInt(value);
+                renderLeaderboard();
+                toggleAdmin();
+            }
+        });
+
+        window.onload = () => {
+            renderLeaderboard();
+            populateAdmin();
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+    </script>
+</body>
+</html>
